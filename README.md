@@ -2,7 +2,7 @@
 
 An adaptive recurring task scheduler built with Google Apps Script, Google Tasks, and Google Sheets.
 
-Instead of using fixed intervals (e.g. “every 7 days”), this system adjusts each task’s next due date based on historical completion behavior using a moving average of past intervals.
+Instead of using fixed intervals (e.g. "every 7 days"), this system adjusts each task's next due date based on historical completion behavior using a moving average of past intervals.
 
 ## Idea
 
@@ -10,7 +10,9 @@ I noticed that different areas of my home require cleaning at very different fre
 
 Recording completion dates of tasks can be automated on many platforms. Since I am already familiar with Google Apps' ecosystem and I am using it on a daily basis, I chose it to accomplish this project.
 
-But then I realized I could take the idea one step further: once completion dates are recorded over time, the intervals between cleanings can be calculated. From those intervals, some form of middle value, like a moving average can be computed — providing a data-informed estimate of when the next cleaning should be scheduled.
+But then I realized I could take the idea one step further: once completion dates are recorded over time, the intervals between cleanings can be calculated. From those intervals, some form of middle value, like a moving average can be computed - providing a data-informed estimate of when the next cleaning should be scheduled.
+
+## What it does
 
 Each time a task is completed:
 
@@ -24,7 +26,7 @@ Over time:
 
 This creates a self-adjusting rhythm based on real-world usage patterns. For example, when a new pet dog arrives at the house, it usually means the dirt accumulates more rapidly in areas where the dog is allowed in. Or, in vacation season, people spend less time at home, creating less dirt, resulting in less frequent cleaning.
 
-As you can see, the computed due date is intended as guidance rather than a strict rule — the task should always be done when it is actually needed, and those real-world decisions are exactly what drive the moving average to adjust over time.
+As you can see, the computed due date is intended as guidance rather than a strict rule - the task should always be done when it is actually needed, and those real-world decisions are exactly what drive the moving average to adjust over time.
 
 ---
 
@@ -79,3 +81,18 @@ The spreadsheet defines:
 - `CLEANING_TASKLIST_ID` - find this by listing and logging all of your task lists - there is a helper function for this too
 5. Deploy a daily time-driven trigger (e.g., 23:00) - there is a helper function for this too.
 
+## Authorization
+
+When running the script for the first time, Google will request authorization.
+
+The script requires permission to:
+
+- Run automatically when you are not present (time-driven trigger)
+- Read and write Google Tasks
+- Read and write Google Sheets
+
+Because this is a personal Apps Script project and not a published Google-verified application, you will see a warning stating that the app is not verified by Google.
+
+After reviewing the source code and confirming that it performs only the intended actions, click **Advanced** and proceed to grant the required permissions.
+
+No external services are used, and all data remains within your Google account.
