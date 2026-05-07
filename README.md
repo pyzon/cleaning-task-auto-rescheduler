@@ -32,14 +32,9 @@ As you can see, the computed due date is intended as guidance rather than a stri
 
 ## Architecture
 
-- **Google Tasks** → execution layer (actual tasks)
-- **Google Sheets** → source of truth for completion history and interval calculations
-- **Apps Script** → automation and synchronization logic
-
-The spreadsheet defines:
-- Task names (header row)
-- Completion history (dates below each task)
-- Moving average intervals (second row of Intervals sheet)
+- **Google Tasks**: user interface
+- **Google Sheets**: data store for completion history and intervals
+- **Apps Script**: automation and synchronization logic
 
 ---
 
@@ -53,18 +48,17 @@ The spreadsheet defines:
 
 ### Intervals Sheet
 - Row 1: identical to Dates sheet row 1
-  - Use `=Dates!A1` and autofill
-  - Just beware if you insert/delete/reorder columns in the Dates sheet, you probably have to redo the autofill here
+  - Insert into A1: `=ARRAYFORMULA(Dates!A1:1)`, no autofill needed
 - Row 2: moving average - or whatever formula you choose - of the intervals (in days) for each task
-  - I used a moving average of the middle 3 of the last 5 intervals, leaving out the highest and lowest. For this, I used this formula: `=ROUND(TRIMMEAN(A$3:A$7,0.4))`
+  - I used a moving average of the middle 3 of the last 5 intervals, leaving out the highest and lowest. For this, I used this formula in A2 and autofill all the way to the right: `=ROUND(TRIMMEAN(A$3:A$7,0.4))`
   - These are the final values that will be read by the script
 - Additional rows - customizable, but here's how I did it:
   - Rows 3 to 7:
-    - The last 5 intervals copied over: `=INDEX(A$8:A,COUNT(A$8:A)+ROW()-7)` - this is so that the average formula is working from the same range, making it simpler
+    - The last 5 intervals copied over: `=INDEX(A$8:A,COUNT(A$8:A)+ROW()-7)` (A3, autofill down to A7, and right all the way) - this is so that the average formula is working from the same range, making it simpler
   - Rows 8 to 12:
     - Padding, filled with whatever intervals are reasonable for the task - this is for the formulas to not break when you don't have enough data yet
   - Rows 13+:
-    - The actual intervals: `=IF(AND(NOT(ISBLANK(Dates!A3)),NOT(ISBLANK(Dates!A2))),Dates!A3-Dates!A2,"")`
+    - The actual intervals: `=IF(AND(NOT(ISBLANK(Dates!A3)),NOT(ISBLANK(Dates!A2))),Dates!A3-Dates!A2,"")` (A13, autofill down and right all the way)
 
 ---
 
@@ -74,7 +68,7 @@ The spreadsheet defines:
 2. Create a dedicated task list in Google Tasks.
 3. Create a Google Apps Script project.
 4. Enable Google Sheets and Google Tasks API services. They will appear on the left under Services if you've done it right.
-5. Add the following Script Properties - there is a helper function for this in the script:
+5. Add the following Script Properties - there is a helper function for this in `helpers.gs`:
 - `CLEANING_DATA_SPREADSHEET_ID` - find this in the URL of the spreadsheet between `d/` and `/edit`
 - `DATES_SHEET_ID` - find this after activating the tab in the URL after `gid=`, if this is the default tab, it will be `0`
 - `INTERVALS_SHEET_ID` - find this similarly

@@ -12,12 +12,14 @@
  * Of course, directly deleting the properties, or the values
  * having changed are some of the reasons to run this.
  * You can review your Script Properties in the Project Settings.
+ *
+ * TODO: replace placeholders with your IDs
  */
 function initProperties() {
   const props = PropertiesService.getScriptProperties();
   props.setProperty(
     "CLEANING_DATA_SPREADSHEET_ID",
-    "1af0IVB08hem7Kxvqw1c-eypuC-SUbXi6lA0EJv_ILig"
+    "00000000000000000000000000000000000000000000"
   );
   props.setProperty(
     "DATES_SHEET_ID",
@@ -25,11 +27,11 @@ function initProperties() {
   );
   props.setProperty(
     "INTERVALS_SHEET_ID",
-    "445196433"
+    "000000000"
   );
   props.setProperty(
     "CLEANING_TASKLIST_ID",
-    "NDJKMktMd1dFZ2hwYV9iVQ"
+    "0000000000000000000000"
   );
 }
 
