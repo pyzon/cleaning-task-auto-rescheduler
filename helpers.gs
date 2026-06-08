@@ -72,3 +72,45 @@ function listTaskLists() {
     Logger.log("Task List: " + taskList);
   }
 }
+
+/**
+ * Removes duplicate tasks by title from a Google Tasks list.
+ * Keeps the first task encountered and deletes the others.
+ *
+ * @param {string} taskListId - Google Tasks list ID.
+ * @returns {number} Number of tasks deleted.
+ */
+function removeDuplicateTasks() {
+  const config = getConfig();
+  const taskListId = config.taskListId;
+  const seenTitles = new Set();
+  const duplicateTaskIds = [];
+
+  let pageToken;
+
+  do {
+    const response = Tasks.Tasks.list(taskListId, {
+      showCompleted: true,
+      showHidden: true,
+      maxResults: 100,
+      pageToken,
+    });
+
+    for (const task of response.items || []) {
+      if (seenTitles.has(task.title)) {
+        duplicateTaskIds.push(task.id);
+        console.log(`Duplicate found: ${task.title} (Due: ${task.due})`);
+      } else {
+        seenTitles.add(task.title);
+      }
+    }
+
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  for (const taskId of duplicateTaskIds) {
+    Tasks.Tasks.remove(taskListId, taskId);
+  }
+
+  console.log(`Deleted ${duplicateTaskIds.length} duplicate tasks.`);
+}
