@@ -33,7 +33,7 @@
 /**
  * Main entry point.
  *
- * Iterates through all task names defined in the first row of the Dates sheet.
+ * Iterates through all task titles defined in the first row of the Dates sheet.
  * For each task:
  *  - Ensures the task exists in the Google Tasks list (creates it if missing)
  *  - If completed, logs the completion date into the Dates sheet
@@ -53,15 +53,18 @@ function rescheduleCleaningTasks() {
   const datesSheet = spreadsheet.getSheetById(config.datesSheetId);
   const intervalsSheet = spreadsheet.getSheetById(config.intervalsSheetId);
 
-  const taskNames = getTaskNames(datesSheet);
+  const taskTitles = gettaskTitles(datesSheet);
 
-  taskNames.forEach((taskName, index) => {
+  const tasksByTitle = getTasksByTitle(config.taskListId);
+
+  taskTitles.forEach((taskTitle, index) => {
     processTask(
-      taskName,
+      taskTitle,
       index,
       config.taskListId,
+      tasksByTitle,
       datesSheet,
-      intervalsSheet
+      intervalsSheet,
     );
   });
 }
@@ -98,9 +101,9 @@ function getConfig() {
 }
 
 /**
- * Retrieves task names from the first row of the Dates sheet.
+ * Retrieves task titles from the first row of the Dates sheet.
  *
- * The first row is expected to contain task names in consecutive columns,
+ * The first row is expected to contain task titles in consecutive columns,
  * starting from column 1, without gaps. The column order determines the
  * mapping between:
  *   - completion history in the Dates sheet
@@ -108,23 +111,28 @@ function getConfig() {
  *   - Google Tasks list items
  *
  * Empty cells are filtered out as a defensive safeguard. Under the intended
- * spreadsheet structure, there should be no empty cells between task names.
+ * spreadsheet structure, there should be no empty cells between task titles.
  * The filter prevents accidental blank headers from being treated as tasks.
  *
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The Dates sheet.
- * @returns {string[]} Ordered array of task names.
+ * @returns {string[]} Ordered array of task titles.
  */
-function getTaskNames(sheet) {
-  const firstRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  return firstRow.filter(name => name && name.toString().trim() !== '');
+function gettaskTitles(sheet) {
+  const firstRow = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0];
+  return firstRow.filter((title) => title && title.toString().trim() !== "");
 }
 
 /**
  * Processes a single task.
  *
+ * The function assumes that all tasks in the list have already been fetched
+ * and indexed by title (tasksByTitle), avoiding repeated API calls.
+ *
  * Behavior:
- *  - If the task does not exist in Google Tasks → creates it and assigns due date.
- *  - If the task exists but is not completed → does nothing.
+ *  - If the task does not exist in the task list → creates it and assigns a due date.
+ *  - If the task exists but is not completed (needsAction) → does nothing.
  *  - If the task exists and is completed:
  *      - Logs completion date into Dates sheet
  *      - Forces spreadsheet recalculation
@@ -132,17 +140,26 @@ function getTaskNames(sheet) {
  *      - Sets new due date
  *      - Marks task as incomplete
  *
- * @param {string} taskName - Name of the task.
+ * @param {string} taskTitle - Title of the task.
  * @param {number} columnIndex - Zero-based column index in the spreadsheet.
  * @param {string} taskListId - Google Tasks list ID.
+ * @param {Map<string, Object>} tasksByTitle - Preloaded map of task title → Google Tasks task object.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} datesSheet - Sheet storing completion history.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} intervalsSheet - Sheet storing computed intervals.
  */
-function processTask(taskName, columnIndex, taskListId, datesSheet, intervalsSheet) {
-  const task = findTaskByName(taskListId, taskName);
+function processTask(
+  taskTitle,
+  columnIndex,
+  taskListId,
+  tasksByTitle,
+  datesSheet,
+  intervalsSheet,
+) {
+  const task = tasksByTitle.get(taskTitle);
 
   if (!task) {
-    const newTask = createTask(taskListId, taskName);
+    console.log(taskTitle);
+    const newTask = createTask(taskListId, taskTitle);
     const interval = getIntervalForTask(intervalsSheet, columnIndex);
     setTaskDueDate(newTask.id, taskListId, interval);
     return;
@@ -164,23 +181,38 @@ function processTask(taskName, columnIndex, taskListId, datesSheet, intervalsShe
 }
 
 /**
- * Searches for a task by exact title match in a Google Tasks list.
+ * Retrieves all tasks from a Google Tasks list and indexes them by exact title.
  *
- * Includes completed and hidden tasks in the search.
+ * Includes completed and hidden tasks in the result set. The function performs
+ * full pagination over the task list and builds an in-memory lookup map where
+ * each task title maps to its corresponding task object.
+ *
+ * If multiple tasks share the same title, only one will be stored in the map
+ * (the last one encountered during traversal).
  *
  * @param {string} taskListId - Google Tasks list ID.
- * @param {string} taskName - Exact task title to search for.
- * @returns {Object|null} Task object if found, otherwise null.
+ * @returns {Map<string, Object>} Map of task title → task object.
  */
-function findTaskByName(taskListId, taskName) {
-  const tasks = Tasks.Tasks.list(taskListId, {
-    showCompleted: true,
-    showHidden: true
-  });
+function getTasksByTitle(taskListId) {
+  const tasksByTitle = new Map();
+  let pageToken = null;
 
-  if (!tasks.items) return null;
+  do {
+    const response = Tasks.Tasks.list(taskListId, {
+      showCompleted: true,
+      showHidden: true,
+      maxResults: 100,
+      pageToken,
+    });
 
-  return tasks.items.find(t => t.title === taskName) || null;
+    for (const task of response.items || []) {
+      tasksByTitle.set(task.title, task);
+    }
+
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  return tasksByTitle;
 }
 
 /**
@@ -202,7 +234,7 @@ function createTask(taskListId, title) {
  * Reads the computed interval value for a task from the Intervals sheet.
  *
  * Assumes:
- *  - Row 1 contains task names
+ *  - Row 1 contains task titles
  *  - Row 2 contains the calculated moving average interval
  *
  * @param {GoogleAppsScript.Spreadsheet.Sheet} intervalsSheet - Intervals sheet.
