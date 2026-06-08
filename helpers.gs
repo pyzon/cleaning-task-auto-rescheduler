@@ -6,7 +6,7 @@
 
 /***
  * Persists constants into PropertiesService
- * 
+ *
  * Only needs to be run once, then properties are stored indefinitely
  * (regardless of executions, script edits, deployments)
  * Of course, directly deleting the properties, or the values
@@ -19,25 +19,16 @@ function initProperties() {
   const props = PropertiesService.getScriptProperties();
   props.setProperty(
     "CLEANING_DATA_SPREADSHEET_ID",
-    "00000000000000000000000000000000000000000000"
+    "00000000000000000000000000000000000000000000",
   );
-  props.setProperty(
-    "DATES_SHEET_ID",
-    "0"
-  );
-  props.setProperty(
-    "INTERVALS_SHEET_ID",
-    "000000000"
-  );
-  props.setProperty(
-    "CLEANING_TASKLIST_ID",
-    "0000000000000000000000"
-  );
+  props.setProperty("DATES_SHEET_ID", "0");
+  props.setProperty("INTERVALS_SHEET_ID", "000000000");
+  props.setProperty("CLEANING_TASKLIST_ID", "0000000000000000000000");
 }
 
 /**
  * Deletes all properties of this script
- * 
+ *
  * Use it if you made a mistake and want to start over.
  */
 function deleteAllProperties() {
@@ -53,7 +44,7 @@ function deleteAllProperties() {
  * You can review your triggers in the Triggers tab.
  */
 function createDailyTrigger() {
-  ScriptApp.newTrigger('rescheduleCleaningTasks')
+  ScriptApp.newTrigger("rescheduleCleaningTasks")
     .timeBased()
     .everyDays(1)
     .atHour(23)

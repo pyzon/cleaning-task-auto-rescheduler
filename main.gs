@@ -87,16 +87,16 @@ function getConfig() {
   function requireProperty(key) {
     const value = props.getProperty(key);
     if (!value) {
-      throw new Error('Missing required Script Property: ' + key);
+      throw new Error("Missing required Script Property: " + key);
     }
     return value;
   }
 
   return {
-    spreadsheetId: requireProperty('CLEANING_DATA_SPREADSHEET_ID'),
-    datesSheetId: Number(requireProperty('DATES_SHEET_ID')),
-    intervalsSheetId: Number(requireProperty('INTERVALS_SHEET_ID')),
-    taskListId: requireProperty('CLEANING_TASKLIST_ID')
+    spreadsheetId: requireProperty("CLEANING_DATA_SPREADSHEET_ID"),
+    datesSheetId: Number(requireProperty("DATES_SHEET_ID")),
+    intervalsSheetId: Number(requireProperty("INTERVALS_SHEET_ID")),
+    taskListId: requireProperty("CLEANING_TASKLIST_ID"),
   };
 }
 
@@ -165,7 +165,7 @@ function processTask(
     return;
   }
 
-  if (task.status !== 'completed') {
+  if (task.status !== "completed") {
     // The only other possible value is needsAction
     return;
   }
@@ -229,9 +229,12 @@ function getTasksByTitle(taskListId) {
  * @returns {Object} The created task object.
  */
 function createTask(taskListId, title) {
-  return Tasks.Tasks.insert({
-    title: title
-  }, taskListId);
+  return Tasks.Tasks.insert(
+    {
+      title: title,
+    },
+    taskListId,
+  );
 }
 
 /**
@@ -286,7 +289,7 @@ function setTaskDueDate(taskId, taskListId, intervalDays) {
  */
 function extractCompletionDate(completedTimestamp) {
   const date = new Date(completedTimestamp);
-  return Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
 }
 
 /**
@@ -324,8 +327,12 @@ function appendCompletionDate(sheet, columnIndex, dateString) {
  * @param {string} taskListId - Google Tasks list ID.
  */
 function markTaskIncomplete(taskId, taskListId) {
-  Tasks.Tasks.patch({
-    status: 'needsAction',
-    completed: null
-  }, taskListId, taskId);
+  Tasks.Tasks.patch(
+    {
+      status: "needsAction",
+      completed: null,
+    },
+    taskListId,
+    taskId,
+  );
 }
