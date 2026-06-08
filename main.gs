@@ -176,8 +176,12 @@ function processTask(
   SpreadsheetApp.flush(); // ensure calculations are applied
 
   const interval = getIntervalForTask(intervalsSheet, columnIndex);
-  setTaskDueDate(task.id, taskListId, interval);
+  const dueDate = setTaskDueDate(task.id, taskListId, interval);
   markTaskIncomplete(task.id, taskListId);
+
+  console.info(
+    `Task "${taskTitle}" completed at ${completionDate} has been marked incomplete and set to be due ${dueDate.toISOString()}.`,
+  );
 }
 
 /**
@@ -254,16 +258,23 @@ function getIntervalForTask(intervalsSheet, columnIndex) {
  * @param {string} taskId - ID of the task.
  * @param {string} taskListId - Google Tasks list ID.
  * @param {number} intervalDays - Number of days to add to today's date.
+ * @returns {Date|null} The computed due date, or null if no update was performed.
  */
 function setTaskDueDate(taskId, taskListId, intervalDays) {
-  if (!intervalDays || isNaN(intervalDays)) return;
+  if (!intervalDays || isNaN(intervalDays)) return null;
 
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + Number(intervalDays));
 
-  Tasks.Tasks.patch({
-    due: dueDate.toISOString()
-  }, taskListId, taskId);
+  Tasks.Tasks.patch(
+    {
+      due: dueDate.toISOString(),
+    },
+    taskListId,
+    taskId,
+  );
+
+  return dueDate;
 }
 
 /**
