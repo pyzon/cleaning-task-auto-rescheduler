@@ -74,10 +74,9 @@ function listTaskLists() {
 }
 
 /**
- * Removes duplicate tasks by title from a Google Tasks list.
+ * Removes duplicate tasks by title from the cleaning Google Tasks list.
  * Keeps the first task encountered and deletes the others.
  *
- * @param {string} taskListId - Google Tasks list ID.
  * @returns {number} Number of tasks deleted.
  */
 function removeDuplicateTasks() {
